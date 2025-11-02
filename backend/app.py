@@ -6,6 +6,18 @@ import uvicorn
 from model_utils import load_model, NUMERIC_FEATURES
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
+
+# Serve the built frontend
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/")
+def serve_frontend():
+    index_path = os.path.join("static", "index.html")
+    return FileResponse(index_path)
+
 
 MODEL_PATH = "model.joblib"
 
