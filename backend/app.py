@@ -5,10 +5,16 @@ from typing import Optional
 import uvicorn
 from model_utils import load_model, NUMERIC_FEATURES
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 
 MODEL_PATH = "model.joblib"
 
 app = FastAPI(title="Student Pass/Fail Predictor")
+
+@app.get("/", response_class=HTMLResponse)
+def home():
+    return "<h2>🚀 FastAPI Student Performance App is Running Successfully!</h2>"
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -55,4 +61,8 @@ def predict(req: PredictRequest):
     return PredictResponse(prediction="pass" if int(pred)==1 else "fail", probability=float(prob))
 
 if __name__ == "__main__":
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+    import os
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("app:app", host="0.0.0.0", port=port)
+
+

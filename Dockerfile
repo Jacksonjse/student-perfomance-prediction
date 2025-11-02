@@ -1,27 +1,32 @@
 # ---------- Frontend Build Stage ----------
-    FROM node:18 AS frontend-build
-    WORKDIR /app/frontend
-    COPY frontend/package*.json ./
-    RUN npm install
-    COPY frontend/ .
-    RUN npm run build
+FROM node:18 AS frontend-build
+WORKDIR /app/frontend
     
-    # ---------- Backend Stage ----------
-    FROM python:3.10-slim
-    WORKDIR /app
+# Copy only package files first (for caching)
+COPY frontend/package*.json ./
+RUN npm install
     
-    # Copy backend files
-    COPY backend/ ./backend
-    COPY student_performance.csv ./
+# Copy rest of frontend and build
+COPY frontend/ .
+RUN npm run build
     
-    # Install Python dependencies
-    RUN pip install --no-cache-dir -r backend/requirements.txt
+# ---------- Backend Stage ----------
+FROM python:3.10-slim
+WORKDIR /app
     
-    # Copy built frontend into backend's static folder
-    COPY --from=frontend-build /app/frontend/dist ./backend/static
+# Copy and install backend dependencies first
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
     
-    EXPOSE 5000
-    WORKDIR /app/backend
+# Copy backend code and data
+COPY backend/ ./backend
+COPY student_performance.csv ./
     
-    CMD ["python", "app.py"]
+# Copy built frontend to backend's static folder
+COPY --from=frontend-build /app/frontend/dist ./backend/static
+
+EXPOSE 5000
+WORKDIR /app/backend
+
+CMD ["python", "app.py"]
     
