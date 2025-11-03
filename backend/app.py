@@ -11,13 +11,16 @@ from model_utils import load_model
 # ---- CONFIG ----
 MODEL_PATH = "model.joblib"
 
-# ---- APP INIT ----
+
+
 app = FastAPI(title="Student Performance Predictor")
 
-# ---- CORS ----
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # in prod, set this to your frontend URL
+    allow_origins=[
+        "http://localhost:5173",  # local dev
+        "https://student-performance-frontend.onrender.com",  # replace with your actual frontend URL if deployed
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -27,11 +30,9 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
-def serve_frontend():
-    index_path = os.path.join("static", "index.html")
-    if os.path.exists(index_path):
-        return FileResponse(index_path)
-    return {"message": "Frontend not built yet. Please build React app."}
+def root():
+    return {"message": "Backend is running. Go to /docs for API documentation."}
+
 
 # ---- MODELS ----
 class PredictRequest(BaseModel):
