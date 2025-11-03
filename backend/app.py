@@ -15,12 +15,15 @@ MODEL_PATH = "model.joblib"
 
 app = FastAPI(title="Student Performance Predictor")
 
+# ---- CORS ----
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",  # local dev
-        "https://student-performance-frontend.onrender.com",  # replace with your actual frontend URL if deployed
+        "http://localhost:5173",
+        "https://student-performance-frontend.onrender.com",
+        "https://student-performance-latest.onrender.com"
     ],
+    allow_origin_regex="https?://.*",  # catch any Render preview URLs
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
