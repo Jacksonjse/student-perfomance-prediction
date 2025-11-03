@@ -63,6 +63,8 @@ def health():
     return {"status": "ok"}
 
 # ---- PREDICT ----
+import pandas as pd
+
 @app.post("/predict", response_model=PredictResponse)
 def predict(req: PredictRequest):
     global model
@@ -72,19 +74,28 @@ def predict(req: PredictRequest):
         raise HTTPException(status_code=500, detail="Model not loaded")
 
     try:
-        X = [[
-            req.weekly_self_study_hours,
-            req.attendance_percentage,
-            req.class_participation,
-            req.total_score
-        ]]
-        prob = model.predict_proba(X)[0][1]
-        pred = model.predict(X)[0]
+        # Convert input into a DataFrame with column names
+        input_df = pd.DataFrame([{
+            "weekly_self_study_hours": req.weekly_self_study_hours,
+            "attendance_percentage": req.attendance_percentage,
+            "class_participation": req.class_participation,
+            "total_score": req.total_score
+        }])
+
+        # Predict
+        pred = model.predict(input_df)[0]
+        prob = model.predict_proba(input_df)[0][1]
+
         print(f"✅ Prediction done: {pred}, probability: {prob}")
-        return PredictResponse(prediction="pass" if int(pred) == 1 else "fail", probability=float(prob))
+        return PredictResponse(
+            prediction="pass" if int(pred) == 1 else "fail",
+            probability=float(prob)
+        )
+
     except Exception as e:
         print("❌ Prediction error:", e)
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 # ---- MAIN ----
