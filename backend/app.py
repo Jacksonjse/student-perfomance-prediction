@@ -18,12 +18,7 @@ app = FastAPI(title="Student Performance Predictor")
 # ---- CORS ----
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "https://student-performance-frontend.onrender.com",
-        "https://student-performance-latest.onrender.com"
-    ],
-    allow_origin_regex="https?://.*",  # catch any Render preview URLs
+    allow_origin_regex=".*",     # allow *any* origin (temporary for testing)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -54,7 +49,13 @@ model = None
 @app.on_event("startup")
 def load_model_on_startup():
     global model
+    print("🔄 Loading model...")
     model = load_model(MODEL_PATH)
+    if model is not None:
+        print("✅ Model loaded successfully!")
+    else:
+        print("❌ Failed to load model!")
+
 
 # ---- HEALTH ----
 @app.get("/health")
@@ -65,18 +66,26 @@ def health():
 @app.post("/predict", response_model=PredictResponse)
 def predict(req: PredictRequest):
     global model
+    print("📩 Incoming prediction request:", req.dict())
+
     if model is None:
         raise HTTPException(status_code=500, detail="Model not loaded")
 
-    X = [[
-        req.weekly_self_study_hours,
-        req.attendance_percentage,
-        req.class_participation,
-        req.total_score
-    ]]
-    prob = model.predict_proba(X)[0][1]
-    pred = model.predict(X)[0]
-    return PredictResponse(prediction="pass" if int(pred) == 1 else "fail", probability=float(prob))
+    try:
+        X = [[
+            req.weekly_self_study_hours,
+            req.attendance_percentage,
+            req.class_participation,
+            req.total_score
+        ]]
+        prob = model.predict_proba(X)[0][1]
+        pred = model.predict(X)[0]
+        print(f"✅ Prediction done: {pred}, probability: {prob}")
+        return PredictResponse(prediction="pass" if int(pred) == 1 else "fail", probability=float(prob))
+    except Exception as e:
+        print("❌ Prediction error:", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 # ---- MAIN ----
 if __name__ == "__main__":
